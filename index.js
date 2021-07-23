@@ -1,14 +1,7 @@
 "use strict";
+/// <reference types="./index.d.ts"/>
 /**
  * @typedef {{ type: "begin"|"end", time: number }} HeartbeatData
- * @typedef {{ isOpen: boolean }} DevtoolsOpenness
- * @typedef {{
- * 	secondsBetweenHeartbeats: number,
- * 	maxMillisWithinHeartbeat: number,
- * 	numExtraAnnoyingDebuggers: number,
- * 	onOpen: () => void,
- * 	onClose: () => void,
- * }} Config
  */
 
 (function() {
@@ -29,7 +22,7 @@ const defaultConfig = {
  * @param {Config} config
  * @returns {DevtoolsOpenness}
  */
-function initDevtoolsDetector(config) {
+function _initDevtoolsDetector(config) {
 	clearTimeout(_stopDetectionToken);
 	config = Object.freeze(Object.assign({}, defaultConfig, config));
 
@@ -54,6 +47,7 @@ function initDevtoolsDetector(config) {
 		{ type: "text/javascript" }
 	)));
 
+	let _cycleId = 0;
 	let _isDevtoolsOpen = false;
 	{
 		/** @type number */
@@ -62,15 +56,25 @@ function initDevtoolsDetector(config) {
 			console.log(msg.data);
 			if (msg.data.type === "begin") {
 				startTime = msg.data.time;
+				const _oldCycleId = _cycleId;
+				setTimeout(() => {
+					// if "end" is not received by now, debugger was probably triggered.
+					if (_oldCycleId === _cycleId) {
+						if (!_isDevtoolsOpen) {
+							_isDevtoolsOpen = true;
+							if (typeof config.onOpen === "function") { config.onOpen(); }
+						}
+					}
+				}, config.maxMillisWithinHeartbeat + Math.min(200, config.secondsBetweenHeartbeats * 1000));
+				// ^ Note: 200ms just for safety to avoid false positives. Not sure if truly needed.
 				return;
 			}
+			// If "end":
 			const pulseLength = msg.data.time - startTime;
 			console.log(pulseLength);
 			if (pulseLength > config.maxMillisWithinHeartbeat) {
-				if (!_isDevtoolsOpen) {
-					_isDevtoolsOpen = true;
-					if (typeof config.onOpen === "function") { config.onOpen(); }
-				}
+				// don't do it here, since if it is open, it will be blocked on debugger
+				// and this won't run until the debugger steps over all the breakpoints.
 			} else {
 				if (_isDevtoolsOpen) {
 					_isDevtoolsOpen = false;
@@ -81,6 +85,7 @@ function initDevtoolsDetector(config) {
 				_stopDetectionToken = undefined;
 				detectorWorker.postMessage({});
 			}, config.secondsBetweenHeartbeats * 1000);
+			_cycleId++;
 		};
 
 		// Begin communications loop:
@@ -91,5 +96,5 @@ function initDevtoolsDetector(config) {
 	});
 };
 
-window.initDevtoolsDetector = initDevtoolsDetector;
+window.initDevtoolsDetector = _initDevtoolsDetector;
 })();

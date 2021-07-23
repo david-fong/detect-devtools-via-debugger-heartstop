@@ -8,5 +8,6 @@
   ],
   "author": "David Fong (https://github.com/david-fong)",
   "repository": "github:david-fong/detect-devtools-via-debugger-heartstop",
-  "main": "index.js"
+  "main": "index.js",
+  "types": "index.d.ts"
 }
