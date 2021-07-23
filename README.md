@@ -1,4 +1,4 @@
-# detect-devtools-via-debugger-heartstop
+# 💞🐛 Detect Devtools Via Debugger Heartstop
 
 [![npm version][npm-version-label]][npm-url]
 
@@ -9,6 +9,10 @@ This has the benefit over other implementations that it doesn't depend on whethe
 It has a disadvantage that the response is not instantaneous: The heartbeat has configurable delay between each pulse to reduce resource usage, and the messages sent to the main thread have to wait for their turn in the main threads event loop before they get to be processed. For slow timings, it would be more possible to bypass the detection by quickly continuing execution of the debugger.
 
 Though the design involves timing execution, it is written such that the detection should not trigger false positives due to busy threads.
+
+## Usage
+
+See [the typings file](https://github.com/david-fong/detect-devtools-via-debugger-heartstop/blob/main/index.d.ts).
 
 [npm-version-label]: https://img.shields.io/npm/v/detect-devtools-via-debugger-heartstop.svg?style=flat-square
 [npm-url]: https://www.npmjs.com/package/detect-devtools-via-debugger-heartstop
