@@ -1,0 +1,12 @@
+{
+  "name": "detect-devtools-via-debugger-heartstop",
+  "version": "1.0.0",
+  "license": "MIT",
+  "description": "Detect whether browser devtools are open",
+  "keywords": [
+    "devtools"
+  ],
+  "author": "David Fong (https://github.com/david-fong)",
+  "repository": "github:david-fong/detect-devtools-via-debugger-heartstop",
+  "main": "index.js"
+}
