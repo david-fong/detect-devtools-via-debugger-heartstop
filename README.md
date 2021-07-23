@@ -2,11 +2,15 @@
 
 [![npm version][npm-version-label]][npm-url]
 
-Detects whether the browser's devtools are open. It opens a web worker with a polling loop that sends pulses to the main thread. Each pulse is two messages with a debugger statement in between them, which will create an abnormal delay between enclosing messages when devtools are opened on any browser that implements debugging workers and enables debugging always-if-and-only-if the devtools are opened. It does _not_ block the main thread.
+Detects whether the browser's devtools are open.
+
+## How It Works
+
+It opens a web worker with a polling loop that sends pulses to the main thread. Each pulse is two messages with a debugger statement in between them, which will create an abnormal delay between enclosing messages when devtools are opened on any browser that implements debugging workers and enables debugging always-if-and-only-if the devtools are opened. It does _not_ block the main thread.
 
 ## Pros and Cons
 
-This has the benefit over other implementations that it doesn't depend on whether the devtools pane is attached to the browser window, or other deeply browser-internal behaviours such as lazy console logging of complex objects, which are much more subject to change. I think it's fair to say that it's one of the least hacky platform-agnostic solutions out there.
+This has the benefit over other implementations that it doesn't depend on whether the devtools pane is attached to the browser window, or other deeply browser-internal behaviours such as lazy console logging of complex objects, which are much more subject to change.
 
 To devs who want some custom browser hooks for dev purposes, it has a big disadvantage that it will enter debugging for the worker thread whenever devtools are opened, which for such a use case would be extremely annoying and probably negate any convenience gained by the hook. If that sounds like your use case, this solution is probably not for you. Scroll down for [links to alternatives](#Alternatives).
 
