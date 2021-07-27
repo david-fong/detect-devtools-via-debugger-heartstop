@@ -12,11 +12,11 @@ It opens a web worker with a polling loop that sends pulses to the main thread. 
 
 This has the benefit over other implementations that it doesn't depend on whether the devtools pane is attached to the browser window, or other deeply browser-internal behaviours such as lazy console logging of complex objects, which are much more subject to change.
 
-To devs who want some custom browser hooks for dev purposes, it has a big disadvantage that it will enter debugging for the worker thread whenever devtools are opened, which for such a use case would be extremely annoying and probably negate any convenience gained by the hook. If that sounds like your use case, this solution is probably not for you. Scroll down for [links to alternatives](#Alternatives).
+To devs who want some custom browser hooks for dev purposes, it has a big disadvantage that it will enter debugging for the worker thread whenever devtools are opened, which- though it doesn't block the main thread- would still overlay debugger controls in the page window, which would probably be very annoying. If that sounds like your use case, this solution is probably not for you. Scroll down for [links to alternatives](#Alternatives).
 
-To devs who want to do weird things to users such as rickrolling users who open devtools in a single-player game probably intending to cheat, it has a tiny disadvantage that the response is not instantaneous: The heartbeat has configurable delay between each pulse to reduce resource usage, and the messages sent to the main thread have to wait for their turn in the main threads event loop before they get to be processed. But there are several configuration options in place to mitigate this: timing parameters and looping through debugger statements instead of just one.
+This is more suited for devs who want to do silly/weird things to users such as rickrolling people who open devtools in a browser game. It has a tiny disadvantage that the response is not instantaneous: The heartbeat has configurable delay between each pulse to reduce resource usage, and the messages sent to the main thread have to wait for their turn in the main threads event loop before they get to be processed. But there are several configuration options in place to mitigate this: timing parameters and looping through debugger statements instead of just one.
 
-Though the design involves timing execution, it is written such that the detection should not trigger false positives due to busy threads.
+Though the design involves timing program execution, it is written such that the detection should never trigger false positives due to busy threads.
 
 ## Usage
 

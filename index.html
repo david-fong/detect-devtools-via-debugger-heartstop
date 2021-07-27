@@ -12,10 +12,17 @@
 	<meta name="og:description" content=""/>
 	<meta name="og:image"       content=""/>
 
-   <script defer src="index.js"></script>
+   <script src="index.js"></script>
 </head>
 
 
 <body style="margin: 0; height: 100%; background-color: black; color: white;">
+	<script>
+		'use strict';
+		initDevtoolsDetector({
+			onOpen()  { alert("devtools are now open"); },
+			onClose() { alert("devtools are now closed"); },
+		});
+	</script>
 </body>
 </html>

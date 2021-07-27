@@ -14,4 +14,8 @@ type Config = {
 	onClose: () => void,
 };
 
+/**
+ * Calling this again will stop the previously started heartbeat loop
+ * and start a new one.
+ */
 function initDevtoolsDetector(config: Config): DevtoolsOpenness;

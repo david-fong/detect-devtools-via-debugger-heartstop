@@ -53,7 +53,6 @@ function _initDevtoolsDetector(config) {
 		/** @type number */
 		let startTime;
 		detectorWorker.onmessage = (/** @type {MessageEvent<HeartbeatData>}*/ msg) => {
-			console.log(msg.data);
 			if (msg.data.type === "begin") {
 				startTime = msg.data.time;
 				const _oldCycleId = _cycleId;
@@ -70,16 +69,9 @@ function _initDevtoolsDetector(config) {
 				return;
 			}
 			// If "end":
-			const pulseLength = msg.data.time - startTime;
-			console.log(pulseLength);
-			if (pulseLength > config.maxMillisWithinHeartbeat) {
-				// don't do it here, since if it is open, it will be blocked on debugger
-				// and this won't run until the debugger steps over all the breakpoints.
-			} else {
-				if (_isDevtoolsOpen) {
-					_isDevtoolsOpen = false;
-					if (typeof config.onClose === "function") { config.onClose(); }
-				}
+			if (_isDevtoolsOpen) {
+				_isDevtoolsOpen = false;
+				if (typeof config.onClose === "function") { config.onClose(); }
 			}
 			_stopDetectionToken = setTimeout(() => {
 				_stopDetectionToken = undefined;
