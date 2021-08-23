@@ -1,6 +1,6 @@
 {
   "name": "detect-devtools-via-debugger-heartstop",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "license": "MIT",
   "description": "Detect whether browser devtools are open",
   "keywords": [

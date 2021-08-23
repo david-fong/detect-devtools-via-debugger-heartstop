@@ -45,15 +45,21 @@
 	/** @type {number} */
 	let mainThreadAckTimeoutToken = NaN;
 
+	const ACK_TYPE_MAIN_THREAD = "devtoolsOpen";
+
 	const onPulseAck = (/** @type {MessageEvent<PulseAck>}*/ pulseAck) => {
 		nextPulseTimeoutToken = NaN;
+		if (pulseCallTime === NaN) {
+			// main thread timeout callback came after onMessage callback.
+			return;
+		}
 		const newIsDevtoolsOpen = ((pulseAck.timeStamp - pulseCallTime) > config.maxMillisBeforeAckWhenClosed);
 		if (newIsDevtoolsOpen !== _isDevtoolsOpen) {
 			_isDevtoolsOpen = newIsDevtoolsOpen;
 			const callback = { true: config.onDetectOpen, false: config.onDetectClose }[_isDevtoolsOpen+""];
 			if (callback) { callback(); }
 		}
-		if (pulseAck.type === "devtoolsOpen") { return; }
+		if (pulseAck.type === ACK_TYPE_MAIN_THREAD) { return; }
 		clearTimeout(mainThreadAckTimeoutToken);
 		mainThreadAckTimeoutToken = NaN;
 		pulseCallTime = NaN;
@@ -64,9 +70,14 @@
 		pulseCallTime = performance.now();
 		ackThread.postMessage({ moreDebugs: config.moreAnnoyingDebuggerStatements });
 		mainThreadAckTimeoutToken = setTimeout(() => {
-			mainThreadAckTimeoutToken = NaN;
-			onPulseAck(new MessageEvent("devtoolsOpen"));
-		}, config.maxMillisBeforeAckWhenClosed + 1);
+			// wrap in another setTimeout to ensure coming after the onMessage
+			// callback if it has been queued up after the outer setTimeout here.
+			setTimeout(() => {
+				mainThreadAckTimeoutToken = NaN;
+				onPulseAck(new MessageEvent(ACK_TYPE_MAIN_THREAD));
+			}, 0)},
+			config.maxMillisBeforeAckWhenClosed + 1,
+		);
 	}
 
 	/** @type {DevtoolsDetector} */
