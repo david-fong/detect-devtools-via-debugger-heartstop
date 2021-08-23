@@ -1,14 +1,14 @@
 "use strict";
 /// <reference types="./index.d.ts"/>
 /** @typedef {{ moreDebugs: number }} PulseCall */
-/** @typedef {{ }} PulseAck */
+/** @typedef {{ isOpenBeat: boolean }} PulseAck */
 
 (() => {
 	/** @type {DevtoolsDetectorConfig} */
 	const config = {
 		pollingIntervalSeconds: 0.25,
 		maxMillisBeforeAckWhenClosed: 100,
-		moreAnnoyingDebuggerStatements: 0,
+		moreAnnoyingDebuggerStatements: 1,
 
 		onDetectOpen: undefined,
 		onDetectClose: undefined,
@@ -18,66 +18,54 @@
 	};
 	Object.seal(config);
 
-	const ackThread = new Worker(URL.createObjectURL(new Blob([
-		(function ackThreadFunction() {
-			"use strict";
-			onmessage = (ev) => {
-				debugger;
-				for (let i = 0; i < ev.data.moreDebugs; i++) { debugger; }
-				// @ts-expect-error
-				postMessage({});
-			};
-		})
-		.toString()
-		.split("\n").slice(1, -1) // strip function wrapper
-		.map((l) => l.substring(3)).join("\n") // useless prettify 😊
+	const heart = new Worker(URL.createObjectURL(new Blob([
+// Note: putting everything before the first debugger on the same line as the
+// opening callback brace prevents a user from placing their own debugger on
+// a line before the first debugger and taking control in that way.
+`"use strict";
+onmessage = (ev) => { postMessage({isOpenBeat:true});
+	debugger; for (let i = 0; i < ev.data.moreDebugs; i++) { debugger; }
+	postMessage({isOpenBeat:false});
+};`
 	], { type: "text/javascript" })));
 
 	let _isDevtoolsOpen = false;
 	let _isDetectorPaused = true;
 
-	/** @type {number} */
-	let pulseCallTime = NaN;
+	// @ts-expect-error
+	// note: leverages that promises can only resolve once.
+	/**@type {function (boolean | null): void}*/ let resolveVerdict = undefined;
+	/**@type {number}*/ let nextPulse$ = NaN;
 
-	/** @type {number} */
-	let nextPulseTimeoutToken = NaN;
-
-	/** @type {number} */
-	let mainThreadAckTimeoutToken = NaN;
-
-	const ACK_TYPE_MAIN_THREAD = "devtoolsOpen";
-
-	const onPulseAck = (/** @type {MessageEvent<PulseAck>}*/ pulseAck) => {
-		nextPulseTimeoutToken = NaN;
-		if (pulseCallTime === NaN) {
-			// main thread timeout callback came after onMessage callback.
-			return;
+	const onHeartMsg = (/** @type {MessageEvent<PulseAck>}*/ msg) => {
+		if (msg.data.isOpenBeat) {
+			/** @type {Promise<boolean | null>} */
+			let p = new Promise((_resolveVerdict) => {
+				resolveVerdict = _resolveVerdict;
+				let wait$ = setTimeout(
+					() => { wait$ = NaN; resolveVerdict(true); },
+					config.maxMillisBeforeAckWhenClosed + 1,
+				);
+			});
+			p.then((verdict) => {
+				if (verdict === null) return;
+				if (verdict !== _isDevtoolsOpen) {
+					_isDevtoolsOpen = verdict;
+					const cb = { true: config.onDetectOpen, false: config.onDetectClose }[verdict+""];
+					if (cb) cb();
+				}
+				nextPulse$ = setTimeout(
+					() => { nextPulse$ = NaN; doOnePulse(); },
+					config.pollingIntervalSeconds * 1000,
+				);
+			});
+		} else {
+			resolveVerdict(false);
 		}
-		const newIsDevtoolsOpen = ((pulseAck.timeStamp - pulseCallTime) > config.maxMillisBeforeAckWhenClosed);
-		if (newIsDevtoolsOpen !== _isDevtoolsOpen) {
-			_isDevtoolsOpen = newIsDevtoolsOpen;
-			const callback = { true: config.onDetectOpen, false: config.onDetectClose }[_isDevtoolsOpen+""];
-			if (callback) { callback(); }
-		}
-		if (pulseAck.type === ACK_TYPE_MAIN_THREAD) { return; }
-		clearTimeout(mainThreadAckTimeoutToken);
-		mainThreadAckTimeoutToken = NaN;
-		pulseCallTime = NaN;
-		nextPulseTimeoutToken = setTimeout(() => doOnePulse(), config.pollingIntervalSeconds * 1000);
 	};
 
 	const doOnePulse = () => {
-		pulseCallTime = performance.now();
-		ackThread.postMessage({ moreDebugs: config.moreAnnoyingDebuggerStatements });
-		mainThreadAckTimeoutToken = setTimeout(() => {
-			// wrap in another setTimeout to ensure coming after the onMessage
-			// callback if it has been queued up after the outer setTimeout here.
-			setTimeout(() => {
-				mainThreadAckTimeoutToken = NaN;
-				onPulseAck(new MessageEvent(ACK_TYPE_MAIN_THREAD));
-			}, 0)},
-			config.maxMillisBeforeAckWhenClosed + 1,
-		);
+		heart.postMessage({ moreDebugs: config.moreAnnoyingDebuggerStatements });
 	}
 
 	/** @type {DevtoolsDetector} */
@@ -97,12 +85,11 @@
 			if (_isDetectorPaused === pause) { return; }
 			_isDetectorPaused = pause;
 			if (pause) {
-				ackThread.removeEventListener("message", onPulseAck);
-				clearTimeout(nextPulseTimeoutToken);
-				pulseCallTime = NaN;
-				nextPulseTimeoutToken = NaN;
+				heart.removeEventListener("message", onHeartMsg);
+				clearTimeout(nextPulse$); nextPulse$ = NaN;
+				resolveVerdict(null);
 			} else {
-				ackThread.addEventListener("message", onPulseAck);
+				heart.addEventListener("message", onHeartMsg);
 				doOnePulse();
 			}
 		}
