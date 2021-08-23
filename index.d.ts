@@ -4,10 +4,7 @@ type DevtoolsDetectorConfig = {
    /** @default 1.0 */
 	pollingIntervalSeconds: number;
 
-   /**
-	 * Note: [reduced timing precision](https://developer.mozilla.org/docs/Web/API/Performance/now#reduced_time_precision)
-	 * @default 100
-	 */
+   /** @default 100 */
 	maxMillisBeforeAckWhenClosed: number;
 
    /** @default 0 */
@@ -32,3 +29,5 @@ type DevtoolsDetector = {
 	get paused(): boolean;
 	set paused(_: boolean);
 }
+
+declare const devtoolsDetector: DevtoolsDetector;

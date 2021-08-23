@@ -12,33 +12,13 @@
 	<meta name="og:description" content="Demo page for detect-devtools-via-debugger-heartstop"/>
 	<meta name="og:image"       content=""/>
 
+	<link rel="stylesheet" href="demo.css"/>
    <script src="index.js"></script>
    <script src="demo.js" defer></script>
 </head>
 
 
 <body>
-	<style>
-		body {
-			margin: 0; height: 100%;
-			background-color: rgb(24, 3, 83); color: white;
-			font-family: monospace;
-			user-select: none;
-		}
-		:link {  color: rgb(90, 129, 255); }
-		:visited { color: rgb(182, 93, 255); }
-		header {
-			padding-top: 2ch;
-			display: grid;
-			place-items: center;
-		}
-	</style>
-	<script>
-		"use strict";
-		const c = devtoolsDetector.config;
-		c.onDetectOpen = () => { alert("devtools are now open"); };
-		c.onDetectClose = () => { alert("devtools are now closed"); };
-	</script>
 	<header>
 		<div style="font-size: 2.5em;" role="img">💞🐛</div>
 		<div style="font-size: 1.25em;" role="heading">detect devtools via debugger heartstop</div>

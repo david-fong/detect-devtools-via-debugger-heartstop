@@ -17,12 +17,6 @@ This was a fun challenge to tackle. If this solution sounds overly complex, take
 
 ## Pros and Cons
 
-### Cons
-
-🚨 To devs who want some custom browser hooks for their own purposes, _this is not for you_. You will hate it. It will enter debugging for the worker thread whenever devtools are opened, which (in most browsers) also causes the console context to change to the worker's context. Simply continuing the debugger will result in the debugger activating again, and the only way around this is to use the browser's inbuilt mechanism to disable all breakpoints (which may need to be done _each_ time opening the devtools depending on whether your browser remembers the setting). Scroll down for [links to alternatives](#Alternatives).
-
-It can get messed up when certain debugger statements are placed in the main thread. I have not yet tested out what the rules for this are, nor am I really interested in doing so 😅.
-
 ### Pros
 
 This is well suited for devs who want to do silly/weird things to users such as rickrolling people who open devtools in a browser game, and don't mind absolutely destroying the usability/ergonomics of the devtools. In fact, this was the very kind of spirit for which I created this.
@@ -30,6 +24,12 @@ This is well suited for devs who want to do silly/weird things to users such as 
 This has the benefit over other implementations that it doesn't depend on whether the devtools pane is attached to the browser window, or other deeply browser-internal behaviours such as lazy console logging of complex objects, which are much more subject to change.
 
 Though the design involves timing program execution, it is written such that the detection should never trigger false positives due to busy threads, given a reasonable main thread timeout value.
+
+### Cons
+
+🚨 To devs who want some custom browser hooks for their own purposes, _this is not for you_. You will hate it. It will enter debugging for the worker thread whenever devtools are opened, which (in most browsers) also causes the console context to change to the worker's context. Simply continuing the debugger will result in the debugger activating again, and the only way around this is to use the browser's inbuilt mechanism to disable all breakpoints (which may need to be done _each_ time opening the devtools depending on whether your browser remembers the setting). Scroll down for [links to alternatives](#Alternatives).
+
+It can get messed up when certain debugger statements are placed in the main thread. I have not yet tested out what the rules for this are, nor am I really interested in doing so 😅.
 
 ## Usage
 

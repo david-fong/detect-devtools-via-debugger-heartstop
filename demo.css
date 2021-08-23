@@ -1,0 +1,66 @@
+
+*, *::before, *::after {
+	box-sizing: border-box;
+}
+body {
+	margin: 0;
+	font-size: 1.2em;
+	height: 100%;
+	max-width: 60ch;
+	background-color: rgb(24, 3, 83); color: white;
+	font-family: monospace;
+	user-select: none;
+}
+:link { color: rgb(138, 166, 255); }
+:visited { color: rgb(206, 147, 255); }
+::placeholder { color:rgb(132, 118, 175); }
+header {
+	contain: content;
+	padding-top: 2ch;
+	display: grid;
+	place-items: center;
+	gap: 0.75ch
+}
+main {
+	contain: content;
+	padding: 4ch;
+	display: grid;
+	place-items: center;
+}
+legend {
+	padding: 0.5ch 1ch;
+	font-size: 1.1em;
+	text-align: center;
+}
+label {
+	padding-block: 0.5ch;
+}
+input, textarea, select, fieldset {
+	border: dashed 0.3ch rgb(125, 88, 185);
+	border-radius: 0.5ch;
+	box-sizing: content-box;
+	font: inherit;
+	background: inherit;
+	color: inherit;
+}
+input:focus, textarea:focus, select:focus {
+	border: solid 0.3ch rgb(125, 88, 185);
+	outline: none;
+}
+fieldset {
+	border-style: dotted;
+}
+textarea {
+	margin-top: 0.5ch;
+	width: 100%;
+	resize: vertical;
+	box-sizing: border-box;
+}
+option {
+	background: initial;
+	color: initial;
+}
+input[type="number"] {
+	width: 8ch;
+	text-align: end;
+}
