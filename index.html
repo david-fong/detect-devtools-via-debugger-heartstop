@@ -8,21 +8,46 @@
 
 	<meta name="og:title"       content="Detect Devtools Demo"/>
 	<meta name="author"         content="David Fong"/>
-	<meta name="description"    content=""/>
-	<meta name="og:description" content=""/>
+	<meta name="description"    content="Demo page for detect-devtools-via-debugger-heartstop"/>
+	<meta name="og:description" content="Demo page for detect-devtools-via-debugger-heartstop"/>
 	<meta name="og:image"       content=""/>
 
    <script src="index.js"></script>
+   <script src="demo.js" defer></script>
 </head>
 
 
-<body style="margin: 0; height: 100%; background-color: black; color: white;">
+<body>
+	<style>
+		body {
+			margin: 0; height: 100%;
+			background-color: rgb(24, 3, 83); color: white;
+			font-family: monospace;
+			user-select: none;
+		}
+		:link {  color: rgb(90, 129, 255); }
+		:visited { color: rgb(182, 93, 255); }
+		header {
+			padding-top: 2ch;
+			display: grid;
+			place-items: center;
+		}
+	</style>
 	<script>
-		'use strict';
-		initDevtoolsDetector({
-			onOpen()  { alert("devtools are now open"); },
-			onClose() { alert("devtools are now closed"); },
-		});
+		"use strict";
+		const c = devtoolsDetector.config;
+		c.onDetectOpen = () => { alert("devtools are now open"); };
+		c.onDetectClose = () => { alert("devtools are now closed"); };
 	</script>
+	<header>
+		<div style="font-size: 2.5em;" role="img">💞🐛</div>
+		<div style="font-size: 1.25em;" role="heading">detect devtools via debugger heartstop</div>
+		<div>
+			<span><a href="https://github.com/david-fong/detect-devtools-via-debugger-heartstop">GitHub</a></span>
+			| <span><a href="https://www.npmjs.com/package/detect-devtools-via-debugger-heartstop">NPM</a></span>
+		</div>
+	</header>
+	<main>
+	</main>
 </body>
 </html>

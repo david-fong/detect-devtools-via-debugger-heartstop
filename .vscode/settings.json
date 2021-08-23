@@ -1,0 +1,28 @@
+{
+   "files.associations": {
+       "**/dist/{client,server}/**/*.js": "text", // Loads bundled js much faster.
+       ".eslintignore": "ignore",
+   },
+   "json.schemas": [
+       {
+           "fileMatch": [ "*package*.json" ],
+           "url": "https://json.schemastore.org/package",
+       }
+   ],
+
+   "files.trimTrailingWhitespace": true,
+
+   "javascript.suggest.autoImports": false,
+   "[javascript]": {
+       "editor.insertSpaces": false,
+   },
+   "[typescript]": {
+       "editor.insertSpaces": false,
+   },
+   "[css]": {
+       "editor.insertSpaces": false,
+   },
+   "[html]": {
+       "editor.insertSpaces": false,
+   },
+}

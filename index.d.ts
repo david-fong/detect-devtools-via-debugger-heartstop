@@ -1,21 +1,34 @@
-type DevtoolsOpenness = { isOpen: boolean };
 
-type Config = {
-   /** @default 100 */
-	secondsBetweenHeartbeats: number,
+type DevtoolsDetectorConfig = {
 
    /** @default 1.0 */
-	maxMillisWithinHeartbeat: number,
+	pollingIntervalSeconds: number;
+
+   /**
+	 * Note: [reduced timing precision](https://developer.mozilla.org/docs/Web/API/Performance/now#reduced_time_precision)
+	 * @default 100
+	 */
+	maxMillisBeforeAckWhenClosed: number;
 
    /** @default 0 */
-	numExtraAnnoyingDebuggers: number,
+	moreAnnoyingDebuggerStatements: number;
 
-	onOpen: () => void,
-	onClose: () => void,
-};
+	onDetectOpen?(): void;
+	onDetectClose?(): void;
 
-/**
- * Calling this again will stop the previously started heartbeat loop
- * and start a new one.
- */
-function initDevtoolsDetector(config: Config): DevtoolsOpenness;
+	/** @default "asap" */
+	startup: "manual" | "asap" | "domContentLoaded";
+
+	/** @default "returnStaleValue" */
+	onCheckOpennessWhilePaused: "returnStaleValue" | "throw";
+}
+
+type DevtoolsDetector = {
+	readonly config: DevtoolsDetectorConfig;
+
+	/** Retains last read value while paused. */
+	get isOpen(): boolean;
+
+	get paused(): boolean;
+	set paused(_: boolean);
+}

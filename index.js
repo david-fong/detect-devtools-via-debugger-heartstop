@@ -1,92 +1,117 @@
 "use strict";
 /// <reference types="./index.d.ts"/>
-/**
- * @typedef {{ type: "begin"|"end", time: number }} HeartbeatData
- */
+/** @typedef {{ moreDebugs: number }} PulseCall */
+/** @typedef {{ }} PulseAck */
 
-(function() {
-/**
- * Used to stop the previous detector if reinitializing.
- * @type {number}
- */
-let _stopDetectionToken = undefined;
+(() => {
+	/** @type {DevtoolsDetectorConfig} */
+	const config = {
+		pollingIntervalSeconds: 0.25,
+		maxMillisBeforeAckWhenClosed: 100,
+		moreAnnoyingDebuggerStatements: 0,
 
-/** @type {Config} */
-const defaultConfig = {
-	secondsBetweenHeartbeats: 1.0,
-	maxMillisWithinHeartbeat: 100,
-	numExtraAnnoyingDebuggers: 0,
-};
+		onDetectOpen: undefined,
+		onDetectClose: undefined,
 
-/**
- * @param {Config} config
- * @returns {DevtoolsOpenness}
- */
-function _initDevtoolsDetector(config) {
-	clearTimeout(_stopDetectionToken);
-	config = Object.freeze(Object.assign({}, defaultConfig, config));
+		startup: "asap",
+		onCheckOpennessWhilePaused: "returnStaleValue",
+	};
+	Object.seal(config);
 
-	function detectorWorkerIife() {
-		"use strict";
-		// =========================
-		onmessage = function (e) {
-			postMessage({ type: "begin", time: Date.now() });
-			debugger;
-			for (let i = 0; i < config.numExtraAnnoyingDebuggers; i++) {
+	const ackThread = new Worker(URL.createObjectURL(new Blob([
+		(function ackThreadFunction() {
+			"use strict";
+			onmessage = (ev) => {
 				debugger;
-			}
-			postMessage({ type: "end", time: Date.now() });
-		}
-		// =========================
-	}
-	const detectorWorker = new Worker(URL.createObjectURL(new Blob(
-		[detectorWorkerIife.toString()
-			.split("\n").slice(1, -2).join("\n")
-			.replace(/config\.([a-zA-Z_][a-zA-Z0-9_]*)/g, (match, field) => config[field])
-		],
-		{ type: "text/javascript" }
-	)));
+				for (let i = 0; i < ev.data.moreDebugs; i++) { debugger; }
+				// @ts-expect-error
+				postMessage({});
+			};
+		})
+		.toString()
+		.split("\n").slice(1, -1) // strip function wrapper
+		.map((l) => l.substring(3)).join("\n") // useless prettify 😊
+	], { type: "text/javascript" })));
 
-	let _cycleId = 0;
 	let _isDevtoolsOpen = false;
-	{
-		/** @type number */
-		let startTime;
-		detectorWorker.onmessage = (/** @type {MessageEvent<HeartbeatData>}*/ msg) => {
-			if (msg.data.type === "begin") {
-				startTime = msg.data.time;
-				const _oldCycleId = _cycleId;
-				setTimeout(() => {
-					// if "end" is not received by now, debugger was probably triggered.
-					if (_oldCycleId === _cycleId) {
-						if (!_isDevtoolsOpen) {
-							_isDevtoolsOpen = true;
-							if (typeof config.onOpen === "function") { config.onOpen(); }
-						}
-					}
-				}, config.maxMillisWithinHeartbeat + Math.min(200, config.secondsBetweenHeartbeats * 1000));
-				// ^ Note: 200ms just for safety to avoid false positives. Not sure if truly needed.
-				return;
-			}
-			// If "end":
-			if (_isDevtoolsOpen) {
-				_isDevtoolsOpen = false;
-				if (typeof config.onClose === "function") { config.onClose(); }
-			}
-			_stopDetectionToken = setTimeout(() => {
-				_stopDetectionToken = undefined;
-				detectorWorker.postMessage({});
-			}, config.secondsBetweenHeartbeats * 1000);
-			_cycleId++;
-		};
+	let _isDetectorPaused = true;
 
-		// Begin communications loop:
-		detectorWorker.postMessage({});
+	/** @type {number} */
+	let pulseCallTime = NaN;
+
+	/** @type {number} */
+	let nextPulseTimeoutToken = NaN;
+
+	/** @type {number} */
+	let mainThreadAckTimeoutToken = NaN;
+
+	const onPulseAck = (/** @type {MessageEvent<PulseAck>}*/ pulseAck) => {
+		nextPulseTimeoutToken = NaN;
+		const newIsDevtoolsOpen = ((pulseAck.timeStamp - pulseCallTime) > config.maxMillisBeforeAckWhenClosed);
+		if (newIsDevtoolsOpen !== _isDevtoolsOpen) {
+			_isDevtoolsOpen = newIsDevtoolsOpen;
+			const callback = { true: config.onDetectOpen, false: config.onDetectClose }[_isDevtoolsOpen+""];
+			if (callback) { callback(); }
+		}
+		if (pulseAck.type === "devtoolsOpen") { return; }
+		clearTimeout(mainThreadAckTimeoutToken);
+		mainThreadAckTimeoutToken = NaN;
+		pulseCallTime = NaN;
+		nextPulseTimeoutToken = setTimeout(() => doOnePulse(), config.pollingIntervalSeconds * 1000);
+	};
+
+	const doOnePulse = () => {
+		pulseCallTime = performance.now();
+		ackThread.postMessage({ moreDebugs: config.moreAnnoyingDebuggerStatements });
+		mainThreadAckTimeoutToken = setTimeout(() => {
+			mainThreadAckTimeoutToken = NaN;
+			onPulseAck(new MessageEvent("devtoolsOpen"));
+		}, config.maxMillisBeforeAckWhenClosed + 1);
 	}
-	return Object.freeze({
-		get isOpen() { return _isDevtoolsOpen; },
-	});
-};
 
-window.initDevtoolsDetector = _initDevtoolsDetector;
+	/** @type {DevtoolsDetector} */
+	const detector = {
+		config,
+		get isOpen() {
+			if (_isDetectorPaused && config.onCheckOpennessWhilePaused === "throw") {
+				throw new Error("`onCheckOpennessWhilePaused` is set to `\"throw\"`.")
+			}
+			return _isDevtoolsOpen;
+		},
+		get paused() { return _isDetectorPaused; },
+		set paused(pause) {
+			// Note: a simpler implementation is to skip updating results in the
+			// ack callback. The current implementation conserves resources when
+			// paused.
+			if (_isDetectorPaused === pause) { return; }
+			_isDetectorPaused = pause;
+			if (pause) {
+				ackThread.removeEventListener("message", onPulseAck);
+				clearTimeout(nextPulseTimeoutToken);
+				pulseCallTime = NaN;
+				nextPulseTimeoutToken = NaN;
+			} else {
+				ackThread.addEventListener("message", onPulseAck);
+				doOnePulse();
+			}
+		}
+	};
+	Object.freeze(detector);
+	// @ts-expect-error
+	globalThis.devtoolsDetector = detector;
+
+	switch (config.startup) {
+		case "manual": break;
+		case "asap": detector.paused = false; break;
+		case "domContentLoaded": {
+			if (document.readyState !== "loading") {
+				detector.paused = false;
+			} else {
+				document.addEventListener("DOMContentLoaded", (ev) => {
+					detector.paused = false;
+				}, { once: true });
+			}
+			break;
+		}
+	}
 })();

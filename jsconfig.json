@@ -1,0 +1,9 @@
+{
+   "compilerOptions": {
+      "target": "es2015",
+      "lib": ["es2015", "dom"],
+      "checkJs": true,
+      "strict": true,
+      "noFallthroughCasesInSwitch": true
+   }
+}
