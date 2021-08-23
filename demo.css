@@ -23,9 +23,10 @@ header {
 }
 main {
 	contain: content;
-	padding: 4ch;
+	padding: 3.5ch;
 	display: grid;
 	place-items: center;
+	gap: 2ch;
 }
 legend {
 	padding: 0.5ch 1ch;
@@ -63,4 +64,23 @@ option {
 input[type="number"] {
 	width: 8ch;
 	text-align: end;
+}
+@keyframes dancing-emoji {
+	from { transform: translateY(0); }
+	25% { transform: translateY(0.25ch); }
+	50% { transform: translateY(0); }
+	75% { transform: translateY(-0.25ch); }
+	to { transform: translateY(0);}
+}
+.dancing-emoji {
+	display: inline-block;
+	/* position: relative; */
+	/* animation: 1s linear 0s infinite forward dancing_emoji; */
+	animation-name: dancing-emoji;
+	animation-iteration-count: infinite;
+	animation-duration: 1s;
+	animation-timing-function: step-end;
+}
+.dancing-emoji:nth-child(2n) {
+	animation-delay: 0.25s;
 }
