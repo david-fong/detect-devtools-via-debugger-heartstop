@@ -10,8 +10,8 @@ Detects whether the browser's devtools are open. ([demo](https://david-fong.gith
 1. Worker thread replies with an opening heartbeat.
 1. Main thread reacts by starting a timer to expect the closing heartbeat.
 1. Worker thread's message handler encounters a debugger statement.
-1. If devtools are closed, the worker will immediately send an acknowledgement to the main thread, and the main thread conclude that devtools are closed.
-1. If devtools are opened, the _worker_ will enter a debugging session, and the main thread will timeout waiting for the response, concluding that the debugger must be open. The main thread will _not_ be blocked by the worker's debugging session, but it's timeout _response_ will be blocked by any heavy processing in the main thread ahead of it in the event queue.
+1. If devtools are closed, the worker will immediately send an acknowledgement to the main thread, and the main thread will conclude that devtools are closed.
+1. If devtools are opened, the _worker_ will enter a debugging session, and the main thread will notice that the Worker has not responded sufficiently quickly, concluding that the debugger must be open. The main thread will _not_ be blocked by the worker's debugging session, but it's timeout _response_ will be blocked by any heavy processing in the main thread ahead of it in the event queue.
 
 It assumes that the browser always enters debugging when devtools are open for any thread that encounters a debugging statement. Please read on to find out about browser support.
 
@@ -29,7 +29,7 @@ Though the design involves timing program execution, it is written such that the
 
 ### Cons
 
-On FireFox, this only works when the debugger is the active tab. Chrome (as of 92) always enters debugging no matter what the active devtools tab is.
+On FireFox, this only works when the debugger is the active tab. Chrome (tested for v92) always enters debugging no matter what the active devtools tab is.
 
 🚨 To devs who want some custom browser hooks for their own purposes, _this is not for you_. You will hate it. It will enter debugging for the worker thread whenever devtools are opened, which (in most browsers) also causes the console context to change to the worker's context. Simply continuing the debugger will result in the debugger activating again, and the only way around this is to use the browser's inbuilt mechanism to disable all breakpoints (which may need to be done _each_ time opening the devtools depending on whether your browser remembers the setting). Scroll down for [links to alternatives](#Alternatives).
 
