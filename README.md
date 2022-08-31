@@ -29,6 +29,8 @@ Though the design involves timing program execution, it is written such that the
 
 ### Cons
 
+Like all solutions involving the `debugger` statement, the devtools user can bypass it simply by disabling breakpoints.
+
 On FireFox, this only works when the debugger is the active tab. Chrome (tested for v92) always enters debugging no matter what the active devtools tab is.
 
 🚨 To devs who want some custom browser hooks for their own purposes, _this is not for you_. You will hate it. It will enter debugging for the worker thread whenever devtools are opened, which (in most browsers) also causes the console context to change to the worker's context. Simply continuing the debugger will result in the debugger activating again, and the only way around this is to use the browser's inbuilt mechanism to disable all breakpoints (which may need to be done _each_ time opening the devtools depending on whether your browser remembers the setting). Scroll down for [links to alternatives](#Alternatives).
